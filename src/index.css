@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* =========================================================
+   디자인 토큰
+   ========================================================= */
+@theme {
+  /* 궁서체.
+     Windows 에는 시스템 궁서가 있고, 없는 기기(폰 등)에서는
+     웹폰트 명조(Nanum Myeongjo)로 떨어집니다. */
+  --font-body: "궁서", Gungsuh, GungsuhChe, "바탕", Batang,
+               "Nanum Myeongjo", serif;
+  --font-impact: "궁서", Gungsuh, GungsuhChe, "바탕", Batang,
+                 "Nanum Myeongjo", serif;
+
+  --color-royal-50:  #fdf2ff;
+  --color-royal-200: #f0abfc;
+  --color-royal-400: #d946ef;
+  --color-royal-600: #a21caf;
+  --color-royal-900: #4a044e;
+
+  --color-gold-300: #fde68a;
+  --color-gold-400: #fbbf24;
+  --color-gold-600: #d97706;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: #14001c;
+  color: white;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 병맛 감성: 텍스트 선택 방지 (드래그하면 몰입 깨짐) */
+body { user-select: none; }
+input { user-select: text; }
+
+/* =========================================================
+   재사용 애니메이션
+   ========================================================= */
+
+/* 무지개 흐르는 그라데이션 텍스트 */
+@keyframes rainbow-flow {
+  to { background-position: 300% center; }
+}
+.rainbow-text {
+  background: linear-gradient(
+    90deg,
+    #ff2d55, #ff9500, #ffe066, #34c759, #00c7ff, #af52de, #ff2d55
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow-flow 2s linear infinite;
+}
+
+/* 반짝반짝 (왕관 등) */
+@keyframes shimmer {
+  0%, 100% { filter: brightness(1)   drop-shadow(0 0 6px  var(--color-gold-400)); }
+  50%      { filter: brightness(1.6) drop-shadow(0 0 22px var(--color-gold-300)); }
+}
+.shimmer { animation: shimmer 1.6s ease-in-out infinite; }
+
+/* 배경 그라데이션 천천히 흐르기 */
+@keyframes bg-drift {
+  0%, 100% { background-position: 0%   50%; }
+  50%      { background-position: 100% 50%; }
+}
+.royal-bg {
+  background: linear-gradient(135deg, #2e003e, #7a1177, #c026d3, #4a044e, #14001c);
+  background-size: 400% 400%;
+  animation: bg-drift 18s ease infinite;
+}
+
+/* 화면 흔들기 */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-9px,  6px) rotate(-1deg); }
+  40% { transform: translate( 8px, -7px) rotate( 1deg); }
+  60% { transform: translate(-7px, -5px) rotate(-0.6deg); }
+  80% { transform: translate( 6px,  8px) rotate( 0.6deg); }
+}
+.shaking { animation: screen-shake 0.4s linear infinite; }
+
+/* 글리치 */
+@keyframes glitch-jump {
+  0%   { filter: none; transform: translate(0); }
+  20%  { filter: hue-rotate(90deg) saturate(4); transform: translate(-7px, 3px); }
+  40%  { filter: invert(1); transform: translate(6px, -4px); }
+  60%  { filter: hue-rotate(-80deg) contrast(2.5); transform: translate(4px, 5px); }
+  80%  { filter: none; transform: translate(-5px, -3px); }
+  100% { filter: none; transform: translate(0); }
+}
+.glitching { animation: glitch-jump 0.28s steps(2) infinite; }
+
+/* 둥둥 떠다니기 */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+.floating { animation: float-y 3s ease-in-out infinite; }
+
+/* 스크롤바 숨기기 */
+::-webkit-scrollbar { display: none; }
