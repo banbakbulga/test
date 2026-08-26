@@ -5,13 +5,28 @@ import { Popup } from '../ui/Popup'
 import { LoadingBar } from '../ui/LoadingBar'
 import { useFx } from '../fx/fxStore'
 import { sfx } from '../fx/sfx'
-import { playBgm, stopBgm, playSound } from '../fx/bgm'
+import { playBgm, stopBgm, playSound, playSequence } from '../fx/bgm'
 
 /** 환영 화면에서 터지는 소리 */
 const SND_YAHO = '/야호.mp3'      // 최효은일 때
 const SND_GET_OUT = '/꺼져.mp3'   // 아닐 때
+
+/** 공주님 확정 순간 — 앞 소리가 끝나기 직전에 다음 소리가 겹쳐 들어옴 */
+const SND_OPENING = [
+  SND_YAHO,        // 거제 야호
+  '/여자.mp3',     // 여자
+  '/여자.mp3',     // 여자 (두 번)
+  '/인간여자.mp3', // 인간 여자
+]
+
+/** 여자~ 부터 위에 같이 깔리는 소리 */
+const SND_EEEY = '/이이잉.mp3'
+
+/** 공주님이 아닐 때 — 누구세요 다음에 꺼져 */
+const SND_STRANGER = ['/누구세요.mp3', SND_GET_OUT]
 import { isPrincess } from '../game/config'
 import type { FxName } from '../game/types'
+import { asset } from '../asset'
 
 /* =========================================================
    ★ 게임 첫 화면 ★
@@ -80,12 +95,17 @@ const IMG_PRINCESS = [
 ]
 
 const IMG_STRANGER = [
-  '/너 누군데.jpg',
+  '/너 누군데4.jpg',
   '/너 누군데2.jpg',
   '/너 누군데3.jpg',
-  '/너 누군데4.jpg',
+  '/너 누군데.jpg',
   '/너 누군데5.jpg',
 ]
+
+/** 유독 크거나 작게 깔고 싶은 사진만 따로 (기본 1배) */
+const PHOTO_SCALE: Record<string, number> = {
+  '/너 누군데2.jpg': 0.82,
+}
 
 /** 화면을 꽉 채우도록 크게 깔리는 자리 (네 귀퉁이 + 가운데) */
 const SPOTS = [
@@ -256,10 +276,13 @@ export function NameInput({ onDone }: Props) {
                 onClick: () => {
                   setPhase('welcome')
                   if (royal) {
-                    playSound(SND_YAHO)       // 야호
+                    // 야호 → 여자 → 여자 → 인간여자, 여자부터는 이이잉이 같이 깔림
+                    playSequence(SND_OPENING, {
+                      onStep: (i) => i === 1 && playSound(SND_EEEY, 0.7),
+                    })
                     void play('flash')
                   } else {
-                    playSound(SND_GET_OUT)    // 꺼져
+                    playSequence(SND_STRANGER, { overlapMs: 150 }) // 누구세요 → 꺼져
                   }
                 },
               },
@@ -441,7 +464,7 @@ function ScatteredImages({ images, revealed }: { images: string[]; revealed: num
           return (
             <motion.img
               key={src}
-              src={encodeURI(src)}
+              src={asset(src)}
               alt=""
               // 테두리·둥근모서리·필터 없이 원본 그대로, 화면을 꽉 채울 만큼 크게
               className="absolute w-[58vw] max-w-[760px] min-w-[280px]"
@@ -453,7 +476,7 @@ function ScatteredImages({ images, revealed }: { images: string[]; revealed: num
                 ...(centered ? { x: '-50%', y: '-50%' } : null),
               }}
               initial={{ opacity: 0, scale: 0.5, rotate: spot.rot - 12 }}
-              animate={{ opacity: 1, scale: 1, rotate: spot.rot }}
+              animate={{ opacity: 1, scale: PHOTO_SCALE[src] ?? 1, rotate: spot.rot }}
               exit={{ opacity: 0, scale: 0.7 }}
               transition={{
                 opacity: { duration: 0.3 },

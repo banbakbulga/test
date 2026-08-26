@@ -9,3 +9,6 @@ export const PRINCESS = '최효은'
 export function isPrincess(name: string) {
   return name.replace(/\s/g, '') === PRINCESS
 }
+
+/** 무슨 선물을 고르든 결국 나오는 그 집사. */
+export const BUTLER = '양준혁'

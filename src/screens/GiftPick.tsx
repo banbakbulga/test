@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useGame } from '../game/store'
+import type { FxName } from '../game/types'
 import { useFx } from '../fx/fxStore'
 import { sfx } from '../fx/sfx'
-import { playSound } from '../fx/bgm'
+import { playLoop, playSound } from '../fx/bgm'
 import { Button } from '../ui/Button'
+import { DodgeButton } from '../ui/DodgeButton'
+import { useDodge } from '../ui/useDodge'
+import { ButlerCall } from './ButlerCall'
+import { DateContract } from './DateContract'
+import { asset } from '../asset'
 
 /* =========================================================
    선물 고르기
@@ -22,24 +28,39 @@ interface Gift {
   message?: string
   /** 골랐을 때 나는 소리 */
   sound?: string
+  /** 결과로 띄울 사진 (없으면 RESULT_IMAGE) */
+  result?: string
+  /** true 면 결과 사진이 삥글삥글 돌면서 커짐 */
+  spin?: boolean
+  /** 골랐을 때 터뜨릴 이펙트 (없으면 DEFAULT_FX) */
+  fx?: FxName[]
 }
+
+/** 따로 지정 안 한 선물의 기본 이펙트 */
+const DEFAULT_FX: FxName[] = ['confetti', 'lovebomb', 'sparkle']
 
 const GIFTS: Gift[] = [
   {
     src: '/선물1.jfif',
     message: '페라리 로마에 타고 있는 양준혁 집사를 고르다니 탁월한 선택입니다',
     sound: '/앙기모찌.mp3',
+    result: '/집사2.jpg',
+    spin: true,
   },
   { src: '/선물2.jfif', dodge: true },
   {
     src: '/선물3.webp',
     message: '대저택에 살고있는 양준혁 집사를 고르다니 탁월한 선택입니다',
     sound: '/오빠달린다.mp3',
+    result: '/집사4.jpg',
+    fx: ['flash', 'zoom', 'fireworks', 'crowns', 'lovebomb', 'sparkle'],
   },
   {
     src: '/선물4.webp',
     message: '요트에 타고있는 양준혁 집사를 고르다니 탁월한 선택입니다',
     sound: '/한국할아버지.mp3',
+    result: '/집사5.jpg',
+    fx: ['flash', 'bigshake', 'fireworks', 'hearts', 'crowns', 'sparkle'],
   },
   {
     src: '/선물5.jpg',
@@ -51,19 +72,33 @@ const GIFTS: Gift[] = [
 /** 뭘 고르든 결과로 나오는 사진 */
 const RESULT_IMAGE = '/선물5.jpg'
 
+/** 도망 카드(선물2)에 손을 뻗으면 나는 소리 */
+const DODGE_SOUND = '/뿅.mp3'
+
+/** 고르는 동안 계속 도는 음악. 고르면 꺼지고, 다시 고르러 오면 또 돎 */
+const PICK_BGM = '/선물BGM.mp3'
+
 export function GiftPick() {
   const princess = useGame((s) => s.princess)
   const gift = useGame((s) => s.gift)
   const pickGift = useGame((s) => s.pickGift)
   const clearGift = useGame((s) => s.clearGift)
   const play = useFx((s) => s.play)
+  // 놀러가기 → 집사 전화 → 데이트 계약서
+  const [flow, setFlow] = useState<'none' | 'call' | 'contract'>('none')
+
+  /* 아직 안 골랐을 때만 음악 */
+  useEffect(() => {
+    if (gift !== null) return
+    return playLoop(PICK_BGM, 0.5)
+  }, [gift])
 
   const choose = (i: number) => {
     pickGift(i)
     const s = GIFTS[i].sound
     if (s) playSound(s)
     else sfx.fanfare()
-    void play(['confetti', 'lovebomb', 'sparkle'])
+    void play(GIFTS[i].fx ?? DEFAULT_FX)
   }
 
   return (
@@ -110,13 +145,26 @@ export function GiftPick() {
             exit={{ opacity: 0 }}
           >
             <motion.img
-              src={encodeURI(RESULT_IMAGE)}
+              src={asset(GIFTS[gift].result ?? RESULT_IMAGE)}
               alt=""
               className="max-h-[58vh] w-auto max-w-[92vw] object-contain"
-              initial={{ scale: 0.2, rotate: -12, opacity: 0 }}
+              // 삥글삥글: 세 바퀴 돌면서 점점 커짐 / 기본: 통통 튀어나옴
+              initial={
+                GIFTS[gift].spin
+                  ? { scale: 0, rotate: -1080, opacity: 0 }
+                  : { scale: 0.2, rotate: -12, opacity: 0 }
+              }
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 240, damping: 15 }}
+              transition={
+                GIFTS[gift].spin
+                  ? {
+                      rotate: { duration: 1.3, ease: [0.16, 1, 0.3, 1] },
+                      scale: { duration: 1.3, ease: [0.16, 1, 0.3, 1] },
+                      opacity: { duration: 0.25 },
+                    }
+                  : { type: 'spring', stiffness: 240, damping: 15 }
+              }
             />
 
             <motion.p
@@ -130,16 +178,40 @@ export function GiftPick() {
             </motion.p>
 
             <motion.div
+              className="flex flex-wrap items-center justify-center gap-4"
               initial={{ opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 18, delay: 0.9 }}
             >
-              <Button variant="ghost" onClick={clearGift}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setFlow('none')
+                  clearGift()
+                }}
+              >
                 다시 고르기
               </Button>
+
+              {/* 집사는 일하기 싫어함 — 영영 못 누름 */}
+              <DodgeButton>집사 일 시키기</DodgeButton>
+
+              <Button onClick={() => setFlow('call')}>집사랑 놀러가기</Button>
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* 집사 전화 — 받으면 서약서 얘기를 꺼냄 */}
+      <AnimatePresence>
+        {flow === 'call' && (
+          <ButlerCall onDone={() => setFlow('contract')} onClose={() => setFlow('none')} />
+        )}
+      </AnimatePresence>
+
+      {/* 데이트 계약서 — 서명해야 놀러 갈 수 있음 */}
+      <AnimatePresence>
+        {flow === 'contract' && <DateContract onClose={() => setFlow('none')} />}
       </AnimatePresence>
     </div>
   )
@@ -149,78 +221,8 @@ export function GiftPick() {
    선물 카드 하나
    --------------------------------------------------------- */
 function GiftCard({ gift, index, onPick }: { gift: Gift; index: number; onPick: () => void }) {
-  const ref = useRef<HTMLButtonElement>(null)
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const offsetRef = useRef(offset)
-  offsetRef.current = offset
-  const lastSwoosh = useRef(0)
-
-  /** 아무 데나 순간이동 (터치용 / 구석에 몰렸을 때용) */
-  const jump = () => {
-    const el = ref.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    const baseX = r.left - offsetRef.current.x
-    const baseY = r.top - offsetRef.current.y
-    const maxX = Math.max(8, window.innerWidth - r.width - 8)
-    const maxY = Math.max(8, window.innerHeight - r.height - 8)
-    setOffset({
-      x: Math.round(8 + Math.random() * (maxX - 8) - baseX),
-      y: Math.round(8 + Math.random() * (maxY - 8) - baseY),
-    })
-  }
-
-  /* 마우스가 다가오면 다가온 반대 방향으로 계속 피함 */
-  useEffect(() => {
-    if (!gift.dodge) return
-
-    const onMove = (e: PointerEvent) => {
-      const el = ref.current
-      if (!el) return
-      const r = el.getBoundingClientRect()
-      const cx = r.left + r.width / 2
-      const cy = r.top + r.height / 2
-
-      // 커서 → 카드 중심 벡터 = 도망칠 방향
-      const dx = cx - e.clientX
-      const dy = cy - e.clientY
-      const dist = Math.hypot(dx, dy)
-
-      const reach = r.width * 1.1 // 이 거리 안으로 들어오면 반응
-      if (dist > reach) return
-
-      const len = dist || 1
-      const push = r.width * 1.3
-      let nx = cx + (dx / len) * push
-      let ny = cy + (dy / len) * push
-
-      // 화면 안에 붙잡아 두기
-      const halfW = r.width / 2 + 8
-      const halfH = r.height / 2 + 8
-      nx = Math.min(window.innerWidth - halfW, Math.max(halfW, nx))
-      ny = Math.min(window.innerHeight - halfH, Math.max(halfH, ny))
-
-      // 구석에 몰려서 못 도망가면 반대편으로 순간이동
-      if (Math.hypot(nx - e.clientX, ny - e.clientY) < reach * 0.75) {
-        jump()
-        return
-      }
-
-      const now = performance.now()
-      if (now - lastSwoosh.current > 220) {
-        lastSwoosh.current = now
-        sfx.swoosh()
-      }
-
-      setOffset((o) => ({
-        x: Math.round(o.x + (nx - cx)),
-        y: Math.round(o.y + (ny - cy)),
-      }))
-    }
-
-    window.addEventListener('pointermove', onMove)
-    return () => window.removeEventListener('pointermove', onMove)
-  }, [gift.dodge])
+  // 도망 카드는 useDodge 가 마우스를 피해 다님 (일 시키기 버튼과 같은 로직)
+  const { ref, offset, jump, cry } = useDodge<HTMLButtonElement>(!!gift.dodge, DODGE_SOUND)
 
   return (
     <motion.button
@@ -258,7 +260,7 @@ function GiftCard({ gift, index, onPick }: { gift: Gift; index: number; onPick: 
       onPointerDown={(e) => {
         if (!gift.dodge) return
         e.preventDefault()
-        sfx.swoosh()
+        cry()
         jump()
       }}
       onClick={() => {
@@ -267,7 +269,7 @@ function GiftCard({ gift, index, onPick }: { gift: Gift; index: number; onPick: 
       }}
     >
       <img
-        src={encodeURI(gift.src)}
+        src={asset(gift.src)}
         alt={`선물 ${index + 1}`}
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
       />
