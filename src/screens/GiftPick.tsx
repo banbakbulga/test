@@ -10,6 +10,7 @@ import { DodgeButton } from '../ui/DodgeButton'
 import { useDodge } from '../ui/useDodge'
 import { ButlerCall } from './ButlerCall'
 import { DateContract } from './DateContract'
+import { HeirTraining } from './HeirTraining'
 import { asset } from '../asset'
 
 /* =========================================================
@@ -85,7 +86,7 @@ export function GiftPick() {
   const clearGift = useGame((s) => s.clearGift)
   const play = useFx((s) => s.play)
   // 놀러가기 → 집사 전화 → 데이트 계약서
-  const [flow, setFlow] = useState<'none' | 'call' | 'contract'>('none')
+  const [flow, setFlow] = useState<'none' | 'call' | 'contract' | 'heir'>('none')
 
   /* 아직 안 골랐을 때만 음악 */
   useEffect(() => {
@@ -197,6 +198,11 @@ export function GiftPick() {
               <DodgeButton>집사 일 시키기</DodgeButton>
 
               <Button onClick={() => setFlow('call')}>집사랑 놀러가기</Button>
+
+              {/* 눌렀다간 재용이 온다 */}
+              <Button variant="ghost" onClick={() => setFlow('heir')}>
+                후계자 양성교육에 참여하기
+              </Button>
             </motion.div>
           </motion.div>
         )}
@@ -207,6 +213,11 @@ export function GiftPick() {
         {flow === 'call' && (
           <ButlerCall onDone={() => setFlow('contract')} onClose={() => setFlow('none')} />
         )}
+      </AnimatePresence>
+
+      {/* 후계자 양성교육 — 재용이 슥 다가옴 */}
+      <AnimatePresence>
+        {flow === 'heir' && <HeirTraining onClose={() => setFlow('none')} />}
       </AnimatePresence>
 
       {/* 데이트 계약서 — 서명해야 놀러 갈 수 있음 */}
