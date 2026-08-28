@@ -33,7 +33,7 @@ const IMG_CHASE = '/재용3.png'
 const IMG_PARDON = '/재용2.png'
 
 /* ---- 대사 ---- */
-const LINE_WARN = '공주님 ... 정녕 .. 그곳에 다시 발을 들이시려는겁니까 ..?'
+const LINE_WARN = '오호 .. 공주님 .. 이곳에 제발로 찾아오시다뇨 ... 각오는 되어있으시겠죠 ..?'
 const LINE_CHASE = '공주님 도망가시려고요 ..??'
 const LINE_PARDON = '좋습니다 이번 한번만 봐드리지요 ....'
 
