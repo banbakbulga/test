@@ -44,7 +44,7 @@ const GIFTS: Gift[] = [
     src: '/선물1.jfif',
     message: '페라리 로마에 타고 있는 양준혁 집사를 고르다니 탁월한 선택입니다',
     sound: '/앙기모찌.mp3',
-    result: '/집사2.jpg',
+    result: '/집사7.jpg',
     spin: true,
   },
   { src: '/선물2.jfif', dodge: true },
