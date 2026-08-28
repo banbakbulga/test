@@ -24,7 +24,7 @@ const SND_EEEY = '/이이잉.mp3'
 
 /** 공주님이 아닐 때 — 누구세요 다음에 꺼져 */
 const SND_STRANGER = ['/누구세요.mp3', SND_GET_OUT]
-import { isPrincess } from '../game/config'
+import { isPrincess, BUTLER } from '../game/config'
 import type { FxName } from '../game/types'
 import { asset } from '../asset'
 
@@ -55,11 +55,18 @@ interface Props {
 /** 킹받는 입력 검증 */
 function validate(raw: string): string | null {
   const name = raw.trim()
+  const cleaned = name.replace(/\s/g, '')
+
   if (!name) return '공주님... 존함이 없으시다니요? 그럴 리가 없습니다.'
   if (name.length === 1) return '한 글자요? 왕실 규정상 두 글자 이상이어야 합니다.'
   if (['공주', '공주님', 'princess'].includes(name.toLowerCase()))
     return '그건 존함이 아니라 직함이십니다.'
   if (/^[0-9]+$/.test(name)) return '숫자는 죄수 번호입니다. 존함을 입력해 주세요.'
+
+  // 집사 이름을 대면 — 그는 이미 안에 있음
+  if ([BUTLER, `${BUTLER}집사`].includes(cleaned))
+    return `${BUTLER} 집사는 이미 궁 안에서 공주님을 기다리고 있습니다.`
+
   return null
 }
 
