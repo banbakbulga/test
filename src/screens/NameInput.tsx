@@ -39,9 +39,14 @@ import { asset } from '../asset'
 
 type Phase = 'greeting' | 'asking' | 'verifying' | 'confirm' | 'welcome' | 'ssafy'
 
-/** 존함 대신 이걸 치면 나오는 이스터에그 */
+/** 존함 대신 이걸 치면 나오는 이스터에그. 대소문자·띄어쓰기 무시 */
 const SSAFY_WORDS = ['싸피', 'ssafy']
 const isSsafy = (name: string) => SSAFY_WORDS.includes(name.replace(/\s/g, '').toLowerCase())
+
+/** 싸피 경고창에 아주 잠깐 스쳐 지나가는 그 사람 */
+const SSAFY_FLASH_IMAGE = '/재용3.png'
+const FLASH_AT = 450 // 팝업 뜨고 이만큼 뒤에
+const FLASH_MS = 160 // 이만큼만 보임
 
 interface Props {
   onDone: (name: string) => void
@@ -148,6 +153,21 @@ export function NameInput({ onDone }: Props) {
 
   useEffect(() => {
     if (phase === 'asking') inputRef.current?.focus()
+  }, [phase])
+
+  /* 싸피 경고창 — 재용3 이 아주 잠깐 스쳐 지나감 */
+  const [flash, setFlash] = useState(false)
+  useEffect(() => {
+    if (phase !== 'ssafy') {
+      setFlash(false)
+      return
+    }
+    const on = setTimeout(() => setFlash(true), FLASH_AT)
+    const off = setTimeout(() => setFlash(false), FLASH_AT + FLASH_MS)
+    return () => {
+      clearTimeout(on)
+      clearTimeout(off)
+    }
   }, [phase])
 
   const submit = () => {
@@ -277,6 +297,22 @@ export function NameInput({ onDone }: Props) {
         )}
       </AnimatePresence>
 
+      {/* 싸피 경고창 위로 재용3 이 아주 잠깐 스쳐감 */}
+      <AnimatePresence>
+        {flash && (
+          <motion.img
+            key="ssafy-flash"
+            src={asset(SSAFY_FLASH_IMAGE)}
+            alt=""
+            className="pointer-events-none absolute inset-0 z-[55] h-full w-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.9 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.08 }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ---------- 싸피 이스터에그 ---------- */}
       <AnimatePresence>
         {phase === 'ssafy' && (
@@ -284,15 +320,6 @@ export function NameInput({ onDone }: Props) {
             key="ssafy"
             title="경 고"
             buttons={[
-              {
-                label: '가겠다',
-                onClick: () => {
-                  sfx.bad()
-                  void play(['redflash', 'shake'])
-                  setValue('')
-                  setPhase('asking')
-                },
-              },
               {
                 label: '아니요',
                 variant: 'ghost',
