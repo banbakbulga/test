@@ -37,7 +37,11 @@ import { asset } from '../asset'
    welcome 에서 이름에 따라 반응이 갈림 (config.ts 의 PRINCESS)
    ========================================================= */
 
-type Phase = 'greeting' | 'asking' | 'verifying' | 'confirm' | 'welcome'
+type Phase = 'greeting' | 'asking' | 'verifying' | 'confirm' | 'welcome' | 'ssafy'
+
+/** 존함 대신 이걸 치면 나오는 이스터에그 */
+const SSAFY_WORDS = ['싸피', 'ssafy']
+const isSsafy = (name: string) => SSAFY_WORDS.includes(name.replace(/\s/g, '').toLowerCase())
 
 interface Props {
   onDone: (name: string) => void
@@ -147,6 +151,15 @@ export function NameInput({ onDone }: Props) {
   }, [phase])
 
   const submit = () => {
+    // 싸피는 존함이 아니라 장소 — 따로 받아침
+    if (isSsafy(value)) {
+      sfx.ding()
+      void play('glitch')
+      setError(null)
+      setPhase('ssafy')
+      return
+    }
+
     const problem = validate(value)
     if (problem) {
       setError(problem)
@@ -261,6 +274,40 @@ export function NameInput({ onDone }: Props) {
               onDone={() => setPhase('confirm')}
             />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ---------- 싸피 이스터에그 ---------- */}
+      <AnimatePresence>
+        {phase === 'ssafy' && (
+          <Popup
+            key="ssafy"
+            title="경 고"
+            buttons={[
+              {
+                label: '가겠다',
+                onClick: () => {
+                  sfx.bad()
+                  void play(['redflash', 'shake'])
+                  setValue('')
+                  setPhase('asking')
+                },
+              },
+              {
+                label: '아니요',
+                variant: 'ghost',
+                onClick: () => {
+                  sfx.click()
+                  setValue('')
+                  setPhase('asking')
+                },
+              },
+            ]}
+          >
+            그곳은 후계자 양성교육 장소입니다.
+            <br />
+            공주님, 정말 가시겠습니까?
+          </Popup>
         )}
       </AnimatePresence>
 

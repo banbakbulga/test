@@ -91,7 +91,7 @@ export function MarriageVow({ signature, onYes }: { signature: string; onYes: ()
         ))}
 
         <p className="mb-5 text-center text-sm text-rose-700/80">
-          — 부칙: 갑은 이 종이를 3년 전부터 들고 다녔음 —
+          — 부칙: 갑은 이 종이를 2년 전부터 들고 다녔음 —
         </p>
 
         {/* 서명란 — 아까 그 서명이 그대로 */}
